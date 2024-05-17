@@ -1,0 +1,30 @@
+name: GraalVM Native Image builds
+on: [push, pull_request]
+jobs:
+  build:
+    name: Build Executables ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          native-image-job-reports: 'true'
+
+      - name: Build
+        run: |
+          mvn install
+          cd target
+          native-image -jar cmdhelp-1.0-SNAPSHOT-jar-with-dependencies.jar --no-fallback
+      
+      - name: Upload binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: cmdhelp-${{ matrix.os }}
+          path: cmdhelp*
